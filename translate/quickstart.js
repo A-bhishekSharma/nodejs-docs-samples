@@ -33,13 +33,11 @@ const text = 'Hello, world!';
 const target = 'ru';
 
 // Translates some text into Russian
-translateClient.translate(text, target, (err, translation) => {
-  if (err) {
-    console.error(err);
-    return;
-  }
+translateClient.translate(text, target)
+  .then((results) => {
+    const translation = results[0];
 
-  console.log(`Text: ${text}`);
-  console.log(`Translation: ${translation}`);
-});
+    console.log(`Text: ${text}`);
+    console.log(`Translation: ${translation}`);
+  });
 // [END translate_quickstart]

@@ -170,41 +170,25 @@ function analyzeSyntaxInFile (bucketName, fileName) {
 }
 // [END language_syntax_file]
 
-// The command-line program
-const cli = require(`yargs`);
-
-const program = module.exports = {
-  analyzeSentimentOfText,
-  analyzeSentimentInFile,
-  analyzeEntitiesOfText,
-  analyzeEntitiesInFile,
-  analyzeSyntaxOfText,
-  analyzeSyntaxInFile,
-  main: (args) => {
-    // Run the command-line program
-    cli.help().strict().parse(args).argv;
-  }
-};
-
-cli
+require(`yargs`)
   .demand(1)
   .command(`sentimentOfText <text>`, `Detect the sentiment of a block of text.`, {}, (opts) => {
-    program.analyzeSentimentOfText(opts.text);
+    analyzeSentimentOfText(opts.text);
   })
   .command(`sentimentInFile <bucket> <filename>`, `Detect the sentiment of text in a GCS file.`, {}, (opts) => {
-    program.analyzeSentimentInFile(opts.bucket, opts.filename);
+    analyzeSentimentInFile(opts.bucket, opts.filename);
   })
   .command(`entitiesOfText <text>`, `Detect the entities of a block of text.`, {}, (opts) => {
-    program.analyzeEntitiesOfText(opts.text);
+    analyzeEntitiesOfText(opts.text);
   })
   .command(`entitiesInFile <bucket> <filename>`, `Detect the entities of text in a GCS file.`, {}, (opts) => {
-    program.analyzeEntitiesInFile(opts.bucket, opts.filename);
+    analyzeEntitiesInFile(opts.bucket, opts.filename);
   })
   .command(`syntaxOfText <text>`, `Detect the syntax of a block of text.`, {}, (opts) => {
-    program.analyzeSyntaxOfText(opts.text);
+    analyzeSyntaxOfText(opts.text);
   })
   .command(`syntaxInFile <bucket> <filename>`, `Detect the syntax of text in a GCS file.`, {}, (opts) => {
-    program.analyzeSyntaxInFile(opts.bucket, opts.filename);
+    analyzeSyntaxInFile(opts.bucket, opts.filename);
   })
   .example(`node $0 sentimentOfText "President Obama is speaking at the White House."`, ``)
   .example(`node $0 sentimentInFile my-bucket file.txt`, ``)
@@ -214,8 +198,7 @@ cli
   .example(`node $0 syntaxInFile my-bucket file.txt`, ``)
   .wrap(120)
   .recommendCommands()
-  .epilogue(`For more information, see https://cloud.google.com/natural-language/docs`);
-
-if (module === require.main) {
-  program.main(process.argv.slice(2));
-}
+  .epilogue(`For more information, see https://cloud.google.com/natural-language/docs`)
+  .help()
+  .strict()
+  .argv;

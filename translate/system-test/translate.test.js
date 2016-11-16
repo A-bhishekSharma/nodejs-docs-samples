@@ -33,34 +33,32 @@ describe(`translate:translate`, () => {
     return;
   }
 
-  it(`should detect language`, (done) => {
+  it(`should detect language`, () => {
     const output = run(`${cmd} detect "${text}"`, cwd);
-    translate.detect(text, (err, result) => {
-      assert.ifError(err);
-      assert.equal(output, `Detected: ${JSON.stringify(result)}`);
-      done();
-    });
+    return translate.detect(text)
+      .then((results) => {
+        assert.equal(output, `Detected: ${results[0].language}`);
+      });
   });
 
   it(`should list languages`, () => {
     const output = run(`${cmd} list`, cwd);
-    assert.notEqual(output.indexOf(`Languages:`), -1);
-    assert.notEqual(output.indexOf(`{ code: 'af', name: 'Afrikaans' }`), -1);
+    assert.equal(output.includes(`Languages:`), true);
+    assert.equal(output.includes(`{ code: 'af', name: 'Afrikaans' }`), true);
   });
 
   it(`should list languages with a target`, () => {
     const output = run(`${cmd} list es`, cwd);
-    assert.notEqual(output.indexOf(`Languages:`), -1);
-    assert.notEqual(output.indexOf(`{ code: 'af', name: 'afrikáans' }`), -1);
+    assert.equal(output.includes(`Languages:`), true);
+    assert.equal(output.includes(`{ code: 'af', name: 'afrikáans' }`), true);
   });
 
-  it(`should translate text`, (done) => {
+  it(`should translate text`, () => {
     const output = run(`${cmd} translate ${toLang} "${text}"`, cwd);
-    translate.translate(text, toLang, (err, translation) => {
-      assert.ifError(err);
-      assert.notEqual(output.indexOf(`Text: ["${text}"]`), -1);
-      assert.notEqual(output.indexOf(`Translation: "${translation}"`), -1);
-      done();
-    });
+    return translate.translate(text, toLang)
+      .then((results) => {
+        assert.equal(output.includes(`Text: ${text}`), true);
+        assert.equal(output.includes(`Translation: ${results[0]}`), true);
+      });
   });
 });

@@ -31,7 +31,7 @@ Learning API.
 
 View the [documentation][analyze_docs] or the [source code][analyze_code].
 
-__Usage:__ `node analyze --help`
+__Usage:__ `node analyze.js --help`
 
 ```
 Commands:
@@ -46,15 +46,15 @@ Options:
   --help  Show help                                                    [boolean]
 
 Examples:
-  node analyze sentimentOfText "President Obama is speaking at
+  node analyze.js sentimentOfText "President Obama is speaking
+  at the White House."
+  node analyze.js sentimentInFile my-bucket file.txt
+  node analyze.js entitiesOfText "President Obama is speaking
+  at the White House."
+  node analyze.js entitiesInFile my-bucket file.txt
+  node analyze.js syntaxOfText "President Obama is speaking at
   the White House."
-  node analyze sentimentInFile my-bucket file.txt
-  node analyze entitiesOfText "President Obama is speaking at
-  the White House."
-  node analyze entitiesInFile my-bucket file.txt
-  node analyze syntaxOfText "President Obama is speaking at
-  the White House."
-  node analyze syntaxInFile my-bucket file.txt
+  node analyze.js syntaxInFile my-bucket file.txt
 
 For more information, see https://cloud.google.com/natural-language/docs
 ```

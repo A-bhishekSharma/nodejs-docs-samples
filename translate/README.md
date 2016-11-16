@@ -29,32 +29,29 @@ text between thousands of language pairs.
 
 View the [documentation][translate_docs] or the [source code][translate_code].
 
-__Usage:__ `node translate --help`
+__Usage:__ `node translate.js --help`
 
 ```
 Commands:
-  detect <input..>              Detect the language of the provided text or texts
-  list [target]                 List available translation languages. To return language names in a language other than
+  detect <input..>              Detects the language of the provided text or texts
+  list [target]                 Lists available translation languages. To return language names in a language other than
                                 English, specify a target language.
-  translate <toLang> <input..>  Translate the provided text or texts to the target language, optionally specifying the
-                                source language.
+  translate <toLang> <input..>  Translates the provided text or texts to the target language.
 
 Options:
   --apiKey, -k  Your Translate API key. Defaults to the value of the TRANSLATE_API_KEY environment variable.    [string]
   --help        Show help                                                                                      [boolean]
 
 Examples:
-  node translate detect "Hello world!"                          Detect the language of "Hello world!".
-  node translate detect -k your-api-key "Hello world!"          Detect the language of "Hello world!" and "Goodbye",
-  "Goodbye"                                                     supplying the API key inline..
-  node translate list -k your-api-key                           List available translation languages with names in
-                                                                English, supplying the API key inline..
-  node translate list es                                        List available translation languages with names in
+  node translate.js detect "Hello world!"                       Detects the language of "Hello world!".
+  node translate.js detect -k YOUR_API_KEY "Hello world!"       Detects the language of "Hello world!" and "Goodbye",
+  "Goodbye"                                                     supplying the API key inline.
+  node translate.js list -k YOUR_API_KEY                        Lists available translation languages with names in
+                                                                English, supplying the API key inline.
+  node translate.js list es                                     Lists available translation languages with names in
                                                                 Spanish.
-  node translate translate ru "Good morning!"                   Translate "Good morning!" to Russian, auto-detecting the
-                                                                source language.
-  node translate translate ru "Good morning!" -f en -k          Translate "Good morning!" to Russian from English,
-  your-api-key                                                  supplying the API key inline.
+  node translate.js translate ru "Good morning!"                Translates "Good morning!" to Russian, auto-detecting
+                                                                the source language.
 
 For more information, see https://cloud.google.com/translate/docs
 ```
