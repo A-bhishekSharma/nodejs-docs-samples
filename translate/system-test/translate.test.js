@@ -25,13 +25,7 @@ const text = `Hello world!`;
 const toLang = `ru`;
 
 describe(`translate:translate`, () => {
-  const translate = Translate({
-    key: process.env.TRANSLATE_API_KEY
-  });
-  if (!process.env.TRANSLATE_API_KEY) {
-    process.stdout.write(`Skipping Translate API tests...\n`);
-    return;
-  }
+  const translate = Translate();
 
   it(`should detect language`, () => {
     const output = run(`${cmd} detect "${text}"`, cwd);

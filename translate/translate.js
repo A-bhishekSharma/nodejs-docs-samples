@@ -20,11 +20,7 @@ const Translate = require('@google-cloud/translate');
 // [START translate_detect_language]
 function detectLanguage (input) {
   // Instantiates a client
-  const translate = Translate({
-    // The Translate API uses an API key for authentication. This sample looks
-    // for the key in an environment variable.
-    key: process.env.TRANSLATE_API_KEY
-  });
+  const translate = Translate();
 
   // Detects the language. "input" can be a string for detecting the language of
   // a single piece of text, or an array of strings for detecting the languages
@@ -41,11 +37,7 @@ function detectLanguage (input) {
 // [START translate_list_codes]
 function listLanguages () {
   // Instantiates a client
-  const translate = Translate({
-    // The Translate API uses an API key for authentication. This sample looks
-    // for the key in an environment variable.
-    key: process.env.TRANSLATE_API_KEY
-  });
+  const translate = Translate();
 
   // Lists available translation language with their names in English (the default).
   return translate.getLanguages()
@@ -62,11 +54,7 @@ function listLanguages () {
 // [START translate_list_language_names]
 function listLanguagesWithTarget (target) {
   // Instantiates a client
-  const translate = Translate({
-    // The Translate API uses an API key for authentication. This sample looks
-    // for the key in an environment variable.
-    key: process.env.TRANSLATE_API_KEY
-  });
+  const translate = Translate();
 
   // Lists available translation language with their names in a target language
   return translate.getLanguages(target)
@@ -83,11 +71,7 @@ function listLanguagesWithTarget (target) {
 // [START translate_translate_text]
 function translateText (input, target) {
   // Instantiates a client
-  const translate = Translate({
-    // The Translate API uses an API key for authentication. This sample looks
-    // for the key in an environment variable.
-    key: process.env.TRANSLATE_API_KEY
-  });
+  const translate = Translate();
 
   // Translates the text into the target language. "input" can be a string for
   // translating a single piece of text, or an array of strings for translating
@@ -105,15 +89,9 @@ function translateText (input, target) {
 require(`yargs`)
   .demand(1)
   .command(`detect <input..>`, `Detects the language of the provided text or texts`, {}, (opts) => {
-    if (!process.env.TRANSLATE_API_KEY) {
-      process.env.TRANSLATE_API_KEY = opts.apiKey;
-    }
     detectLanguage(opts.input);
   })
   .command(`list [target]`, `Lists available translation languages. To return language names in a language other than English, specify a target language.`, {}, (opts) => {
-    if (!process.env.TRANSLATE_API_KEY) {
-      process.env.TRANSLATE_API_KEY = opts.apiKey;
-    }
     if (opts.target) {
       listLanguagesWithTarget(opts.target);
     } else {
@@ -121,22 +99,11 @@ require(`yargs`)
     }
   })
   .command(`translate <toLang> <input..>`, `Translates the provided text or texts to the target language.`, {}, (opts) => {
-    if (!process.env.TRANSLATE_API_KEY) {
-      process.env.TRANSLATE_API_KEY = opts.apiKey;
-    }
     translateText(opts.input, opts.toLang);
   })
-  .option(`apiKey`, {
-    alias: `k`,
-    global: true,
-    requiresArg: true,
-    default: process.env.TRANSLATE_API_KEY,
-    type: `string`,
-    description: `Your Translate API key. Defaults to the value of the TRANSLATE_API_KEY environment variable.`
-  })
   .example(`node $0 detect "Hello world!"`, `Detects the language of "Hello world!".`)
-  .example(`node $0 detect -k YOUR_API_KEY "Hello world!" "Goodbye"`, `Detects the language of "Hello world!" and "Goodbye", supplying the API key inline.`)
-  .example(`node $0 list -k YOUR_API_KEY`, `Lists available translation languages with names in English, supplying the API key inline.`)
+  .example(`node $0 detect "Hello world!" "Goodbye"`, `Detects the language of "Hello world!" and "Goodbye".`)
+  .example(`node $0 list`, `Lists available translation languages with names in English.`)
   .example(`node $0 list es`, `Lists available translation languages with names in Spanish.`)
   .example(`node $0 translate ru "Good morning!"`, `Translates "Good morning!" to Russian, auto-detecting the source language.`)
   .wrap(120)

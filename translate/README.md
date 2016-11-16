@@ -39,19 +39,15 @@ Commands:
   translate <toLang> <input..>  Translates the provided text or texts to the target language.
 
 Options:
-  --apiKey, -k  Your Translate API key. Defaults to the value of the TRANSLATE_API_KEY environment variable.    [string]
-  --help        Show help                                                                                      [boolean]
+  --help  Show help                                                    [boolean]
 
 Examples:
-  node translate.js detect "Hello world!"                       Detects the language of "Hello world!".
-  node translate.js detect -k YOUR_API_KEY "Hello world!"       Detects the language of "Hello world!" and "Goodbye",
-  "Goodbye"                                                     supplying the API key inline.
-  node translate.js list -k YOUR_API_KEY                        Lists available translation languages with names in
-                                                                English, supplying the API key inline.
-  node translate.js list es                                     Lists available translation languages with names in
-                                                                Spanish.
-  node translate.js translate ru "Good morning!"                Translates "Good morning!" to Russian, auto-detecting
-                                                                the source language.
+  node translate.js detect "Hello world!"            Detects the language of "Hello world!".
+  node translate.js detect "Hello world!" "Goodbye"  Detects the language of "Hello world!" and "Goodbye".
+  node translate.js list                             Lists available translation languages with names in English.
+  node translate.js list es                          Lists available translation languages with names in Spanish.
+  node translate.js translate ru "Good morning!"     Translates "Good morning!" to Russian, auto-detecting the source
+                                                     language.
 
 For more information, see https://cloud.google.com/translate/docs
 ```

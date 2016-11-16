@@ -16,9 +16,7 @@
 'use strict';
 
 const proxyquire = require(`proxyquire`).noPreserveCache();
-const translate = proxyquire(`@google-cloud/translate`, {})({
-  key: process.env.TRANSLATE_API_KEY
-});
+const translate = proxyquire(`@google-cloud/translate`, {})();
 
 describe(`translate:quickstart`, () => {
   it(`should translate a string`, (done) => {
