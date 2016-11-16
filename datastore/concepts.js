@@ -22,16 +22,20 @@ const assert = require('power-assert');
 // https://googlecloudplatform.github.io/gcloud-node/#/docs/google-cloud/latest/guides/authentication
 const Datastore = require('@google-cloud/datastore');
 
+function makeStub () {
+  return sinon.stub().returns(Promise.resolve([]));
+}
+
 // This mock is used in the documentation snippets.
 let datastore = {
-  delete: sinon.stub().returns(Promise.resolve([])),
-  get: sinon.stub().returns(Promise.resolve([])),
-  insert: sinon.stub().returns(Promise.resolve([])),
-  key: sinon.stub().returns(Promise.resolve([])),
-  update: sinon.stub().returns(Promise.resolve([])),
-  upsert: sinon.stub().returns(Promise.resolve([])),
+  delete: makeStub(),
+  get: makeStub(),
+  insert: makeStub(),
+  key: makeStub(),
+  update: makeStub(),
+  upsert: makeStub(),
   runQuery: sinon.stub().returns(Promise.resolve([[]])),
-  save: sinon.stub().returns(Promise.resolve([]))
+  save: makeStub()
 };
 
 class TestHelper {
@@ -279,7 +283,7 @@ class Entity extends TestHelper {
         // Task found.
         const entity = results[0];
 
-        // entity.data = {
+        // entity = {
         //   category: 'Personal',
         //   done: false,
         //   priority: 4,
@@ -974,6 +978,7 @@ class Query extends TestHelper {
             // the `endCursor` property.
             return runPageQuery(info.endCursor)
               .then((results) => {
+                // Concatenate entities
                 results[0] = entities.concat(results[0]);
                 return results;
               });
@@ -1032,210 +1037,203 @@ function transferFunds (fromKey, toKey, amount) {
 }
 // [END transactional_update]
 
-function Transaction (projectId) {
-  var options = {
-    projectId: projectId
-  };
+class Transaction extends TestHelper {
+  constructor (projectId) {
+    super(projectId);
+    this.fromKey = this.datastore.key(['Bank', 1, 'Account', 1]);
+    this.toKey = this.datastore.key(['Bank', 1, 'Account', 2]);
 
-  this.datastore = Datastore(options);
+    this.originalBalance = 100;
+    this.amountToTransfer = 10;
+  }
 
-  this.fromKey = this.datastore.key(['Bank', 1, 'Account', 1]);
-  this.toKey = this.datastore.key(['Bank', 1, 'Account', 2]);
+  restoreBankAccountBalances (config) {
+    const entities = config.keys.map((key) => {
+      return {
+        key: key,
+        data: {
+          balance: config.balance
+        }
+      };
+    });
 
-  this.originalBalance = 100;
-  this.amountToTransfer = 10;
-}
-
-Transaction.prototype.restoreBankAccountBalances = function (config, callback) {
-  const entities = config.keys.map((key) => {
-    return {
-      key: key,
-      data: {
-        balance: config.balance
-      }
-    };
-  });
-
-  if (callback) {
-    this.datastore.save(entities, callback);
-  } else {
     return this.datastore.save(entities);
   }
-};
 
-Transaction.prototype.testTransactionalUpdate = function () {
-  const fromKey = this.fromKey;
-  const toKey = this.toKey;
-  const originalBalance = this.originalBalance;
-  const amountToTransfer = this.amountToTransfer;
-  const datastoreMock = datastore;
+  testTransactionalUpdate () {
+    const fromKey = this.fromKey;
+    const toKey = this.toKey;
+    const originalBalance = this.originalBalance;
+    const amountToTransfer = this.amountToTransfer;
+    const datastoreMock = datastore;
 
-  // Overwrite so the real Datastore instance is used in `transferFunds`.
-  datastore = this.datastore;
+    // Overwrite so the real Datastore instance is used in `transferFunds`.
+    datastore = this.datastore;
 
-  return this.restoreBankAccountBalances({
-    keys: [fromKey, toKey],
-    balance: originalBalance
-  })
-    .then(() => transferFunds(fromKey, toKey, amountToTransfer))
-    .then(() => Promise.all([this.datastore.get(fromKey), this.datastore.get(toKey)]))
-    .then((results) => {
-      const accounts = results.map((result) => result[0]);
-      // Restore `datastore` to the mock API.
-      datastore = datastoreMock;
-      assert.equal(accounts[0].balance, originalBalance - amountToTransfer);
-      assert.equal(accounts[1].balance, originalBalance + amountToTransfer);
+    return this.restoreBankAccountBalances({
+      keys: [fromKey, toKey],
+      balance: originalBalance
     })
-    .catch((err) => {
-      // Restore `datastore` to the mock API.
-      datastore = datastoreMock;
-      return Promise.reject(err);
-    });
-};
-
-Transaction.prototype.testTransactionalRetry = function () {
-  // Overwrite so the real Datastore instance is used in `transferFunds`.
-  const datastoreMock = datastore;
-  datastore = this.datastore;
-
-  const fromKey = this.fromKey;
-  const toKey = this.toKey;
-
-  return this.restoreBankAccountBalances({
-    keys: [fromKey, toKey],
-    balance: this.originalBalance
-  })
-    .then(() => {
-      // [START transactional_retry]
-      function transferFundsWithRetry () {
-        const maxTries = 5;
-        let currentAttempt = 1;
-        let delay = 100;
-
-        function tryRequest () {
-          return transferFunds(fromKey, toKey, 10)
-            .catch((err) => {
-              if (currentAttempt <= maxTries) {
-                // Use exponential backoff
-                return new Promise((resolve, reject) => {
-                  setTimeout(() => {
-                    currentAttempt++;
-                    delay *= 2;
-                    tryRequest().then(resolve, reject);
-                  }, delay);
-                });
-              }
-              return Promise.reject(err);
-            });
-        }
-
-        return tryRequest(1, 5);
-      }
-      // [END transactional_retry]
-      return transferFundsWithRetry();
-    })
-    .then(() => {
-      // Restore `datastore` to the mock API.
-      datastore = datastoreMock;
-    })
-    .catch(() => {
-      // Restore `datastore` to the mock API.
-      datastore = datastoreMock;
-    });
-};
-
-Transaction.prototype.testTransactionalGetOrCreate = function () {
-  const taskKey = this.datastore.key(['Task', Date.now()]);
-
-  // Overwrite so the real Datastore instance is used in `transferFunds`.
-  const datastoreMock = datastore;
-  datastore = this.datastore;
-
-  // [START transactional_get_or_create]
-  function getOrCreate (taskKey, taskData) {
-    const taskEntity = {
-      key: taskKey,
-      data: taskData
-    };
-
-    const transaction = datastore.transaction();
-
-    return transaction.run()
-      .then(() => transaction.get(taskKey))
+      .then(() => transferFunds(fromKey, toKey, amountToTransfer))
+      .then(() => Promise.all([this.datastore.get(fromKey), this.datastore.get(toKey)]))
       .then((results) => {
-        const task = results[0];
-        if (task) {
-          // The task entity already exists.
-          return transaction.rollback();
-        } else {
-          // Create the task entity.
-          transaction.save(taskEntity);
+        const accounts = results.map((result) => result[0]);
+        // Restore `datastore` to the mock API.
+        datastore = datastoreMock;
+        assert.equal(accounts[0].balance, originalBalance - amountToTransfer);
+        assert.equal(accounts[1].balance, originalBalance + amountToTransfer);
+      })
+      .catch((err) => {
+        // Restore `datastore` to the mock API.
+        datastore = datastoreMock;
+        return Promise.reject(err);
+      });
+  }
+
+  testTransactionalRetry () {
+    // Overwrite so the real Datastore instance is used in `transferFunds`.
+    const datastoreMock = datastore;
+    datastore = this.datastore;
+
+    const fromKey = this.fromKey;
+    const toKey = this.toKey;
+
+    return this.restoreBankAccountBalances({
+      keys: [fromKey, toKey],
+      balance: this.originalBalance
+    })
+      .then(() => {
+        // [START transactional_retry]
+        function transferFundsWithRetry () {
+          const maxTries = 5;
+          let currentAttempt = 1;
+          let delay = 100;
+
+          function tryRequest () {
+            return transferFunds(fromKey, toKey, 10)
+              .catch((err) => {
+                if (currentAttempt <= maxTries) {
+                  // Use exponential backoff
+                  return new Promise((resolve, reject) => {
+                    setTimeout(() => {
+                      currentAttempt++;
+                      delay *= 2;
+                      tryRequest().then(resolve, reject);
+                    }, delay);
+                  });
+                }
+                return Promise.reject(err);
+              });
+          }
+
+          return tryRequest(1, 5);
+        }
+        // [END transactional_retry]
+        return transferFundsWithRetry();
+      })
+      .then(() => {
+        // Restore `datastore` to the mock API.
+        datastore = datastoreMock;
+      })
+      .catch(() => {
+        // Restore `datastore` to the mock API.
+        datastore = datastoreMock;
+      });
+  }
+
+  testTransactionalGetOrCreate () {
+    const taskKey = this.datastore.key(['Task', Date.now()]);
+
+    // Overwrite so the real Datastore instance is used in `transferFunds`.
+    const datastoreMock = datastore;
+    datastore = this.datastore;
+
+    // [START transactional_get_or_create]
+    function getOrCreate (taskKey, taskData) {
+      const taskEntity = {
+        key: taskKey,
+        data: taskData
+      };
+
+      const transaction = datastore.transaction();
+
+      return transaction.run()
+        .then(() => transaction.get(taskKey))
+        .then((results) => {
+          const task = results[0];
+          if (task) {
+            // The task entity already exists.
+            return transaction.rollback();
+          } else {
+            // Create the task entity.
+            transaction.save(taskEntity);
+            return transaction.commit();
+          }
+        })
+        .then(() => taskEntity)
+        .catch(() => transaction.rollback());
+    }
+    // [END transactional_get_or_create]
+
+    return getOrCreate(taskKey, {})
+      .then((task) => {
+        assert(task, 'Should have a task.');
+        return getOrCreate(taskKey, {});
+      })
+      .then((task) => {
+        assert(task, 'Should have a task.');
+        // Restore `datastore` to the mock API.
+        datastore = datastoreMock;
+      })
+      .catch((err) => {
+        // Restore `datastore` to the mock API.
+        datastore = datastoreMock;
+        return Promise.reject(err);
+      });
+  }
+
+  testSingleEntityGroupReadOnly () {
+    // Overwrite so the real Datastore instance is used in `transferFunds`.
+    const datastoreMock = datastore;
+    datastore = this.datastore;
+
+    // [START transactional_single_entity_group_read_only]
+    function getTaskListEntities () {
+      let taskList, taskListEntities;
+
+      const transaction = datastore.transaction();
+      const taskListKey = datastore.key(['TaskList', 'default']);
+
+      return transaction.run()
+        .then(() => datastore.get(taskListKey))
+        .then((results) => {
+          taskList = results[0];
+          const query = datastore.createQuery('Task')
+            .hasAncestor(taskListKey);
+          return datastore.runQuery(query);
+        })
+        .then((results) => {
+          taskListEntities = results[0];
           return transaction.commit();
-        }
-      })
-      .then(() => taskEntity)
-      .catch(() => transaction.rollback());
-  }
-  // [END transactional_get_or_create]
+        })
+        .then(() => [taskList, taskListEntities])
+        .catch(() => transaction.rollback());
+    }
+    // [END transactional_single_entity_group_read_only]
 
-  return getOrCreate(taskKey, {})
-    .then((task) => {
-      assert(task, 'Should have a task.');
-      return getOrCreate(taskKey, {});
-    })
-    .then((task) => {
-      assert(task, 'Should have a task.');
-      // Restore `datastore` to the mock API.
-      datastore = datastoreMock;
-    })
-    .catch((err) => {
-      // Restore `datastore` to the mock API.
-      datastore = datastoreMock;
-      return Promise.reject(err);
-    });
-};
-
-Transaction.prototype.testSingleEntityGroupReadOnly = function () {
-  // Overwrite so the real Datastore instance is used in `transferFunds`.
-  const datastoreMock = datastore;
-  datastore = this.datastore;
-
-  // [START transactional_single_entity_group_read_only]
-  function getTaskListEntities () {
-    let taskList, taskListEntities;
-
-    const transaction = datastore.transaction();
-    const taskListKey = datastore.key(['TaskList', 'default']);
-
-    return transaction.run()
-      .then(() => datastore.get(taskListKey))
+    return getTaskListEntities()
       .then((results) => {
-        taskList = results[0];
-        const query = datastore.createQuery('Task')
-          .hasAncestor(taskListKey);
-        return datastore.runQuery(query);
-      })
-      .then((results) => {
-        taskListEntities = results[0];
-        return transaction.commit();
-      })
-      .then(() => [taskList, taskListEntities])
-      .catch(() => transaction.rollback());
+        // Restore `datastore` to the mock API.
+        datastore = datastoreMock;
+        assert.equal(results.length, 2);
+        assert.equal(Array.isArray(results[1]), true);
+      }, (err) => {
+        // Restore `datastore` to the mock API.
+        datastore = datastoreMock;
+        return Promise.reject(err);
+      });
   }
-  // [END transactional_single_entity_group_read_only]
-
-  return getTaskListEntities()
-    .then((results) => {
-      // Restore `datastore` to the mock API.
-      datastore = datastoreMock;
-      assert.equal(results.length, 2);
-      assert.equal(Array.isArray(results[1]), true);
-    }, (err) => {
-      // Restore `datastore` to the mock API.
-      datastore = datastoreMock;
-      return Promise.reject(err);
-    });
-};
+}
 
 module.exports = {
   Entity: Entity,

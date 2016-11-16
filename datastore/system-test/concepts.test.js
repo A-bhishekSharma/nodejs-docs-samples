@@ -34,7 +34,7 @@ const Query = concepts.Query;
 describe(`datastore:concepts`, () => {
   before(() => {
     const projectId = process.env.GCLOUD_PROJECT;
-    assert(projectId, `You must set the GCLOUD_PROJECT env var!`);
+    assert.equal(!!projectId, true, `You must set the GCLOUD_PROJECT env var!`);
     transaction = new Transaction(projectId);
     metadata = new Metadata(projectId);
     index = new Index(projectId);

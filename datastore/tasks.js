@@ -154,20 +154,7 @@ function deleteTask (taskId) {
 }
 // [END delete_entity]
 
-const cli = require(`yargs`);
-
-const program = module.exports = {
-  addTask,
-  markDone,
-  listTasks,
-  deleteTask,
-  main: (args) => {
-    // Run the command-line program
-    cli.help().strict().parse(args).argv;
-  }
-};
-
-cli
+require(`yargs`)
   .demand(1)
   .command(
     `new <description>`,
@@ -199,8 +186,7 @@ cli
   .example(`node $0 delete 12345`, `Deletes task 12345.`)
   .wrap(120)
   .recommendCommands()
-  .epilogue(`For more information, see https://cloud.google.com/datastore/docs`);
-
-if (module === require.main) {
-  program.main(process.argv.slice(2));
-}
+  .epilogue(`For more information, see https://cloud.google.com/datastore/docs`)
+  .help()
+  .strict()
+  .argv;
